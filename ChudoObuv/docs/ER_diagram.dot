@@ -1,0 +1,93 @@
+digraph ER {
+    graph [fontname="DejaVu Sans", fontsize=18, label="ER-диаграмма базы данных «Чудо Обувь»\n(3-я нормальная форма, SQLite)", labelloc=t,
+           rankdir=LR, splines=true, nodesep=0.45, ranksep=0.9, bgcolor="white", pad=0.25, size="16,10!"];
+    node  [shape=plaintext, fontname="DejaVu Sans", fontsize=10];
+    edge  [fontname="DejaVu Sans", fontsize=9, color="#555555", arrowsize=0.7];
+
+    roles [label=<<table border="1" cellborder="1" cellspacing="0" cellpadding="3">
+        <tr><td bgcolor="#70B2AF" colspan="2" align="center"><b>Roles</b></td></tr>
+        <tr><td align="left" bgcolor="#FFF2CC"><b>RoleId</b> (PK)</td><td align="left">INTEGER</td></tr>
+        <tr><td align="left">RoleName</td><td align="left">TEXT, UNIQUE</td></tr>
+    </table>>];
+
+    users [label=<<table border="1" cellborder="1" cellspacing="0" cellpadding="3">
+        <tr><td bgcolor="#70B2AF" colspan="2" align="center"><b>Users</b></td></tr>
+        <tr><td align="left" bgcolor="#FFF2CC"><b>UserId</b> (PK)</td><td align="left">INTEGER</td></tr>
+        <tr><td align="left">LastName</td><td align="left">TEXT</td></tr>
+        <tr><td align="left">FirstName</td><td align="left">TEXT</td></tr>
+        <tr><td align="left">MiddleName</td><td align="left">TEXT</td></tr>
+        <tr><td align="left">Login</td><td align="left">TEXT, UNIQUE</td></tr>
+        <tr><td align="left" bgcolor="#DDEBF7"><b>RoleId</b> (FK)</td><td align="left">INTEGER</td></tr>
+    </table>>];
+
+    categories [label=<<table border="1" cellborder="1" cellspacing="0" cellpadding="3">
+        <tr><td bgcolor="#70B2AF" colspan="2" align="center"><b>Categories</b></td></tr>
+        <tr><td align="left" bgcolor="#FFF2CC"><b>CategoryId</b> (PK)</td><td align="left">INTEGER</td></tr>
+        <tr><td align="left">CategoryName</td><td align="left">TEXT, UNIQUE</td></tr>
+    </table>>];
+
+    subcategories [label=<<table border="1" cellborder="1" cellspacing="0" cellpadding="3">
+        <tr><td bgcolor="#70B2AF" colspan="2" align="center"><b>Subcategories</b></td></tr>
+        <tr><td align="left" bgcolor="#FFF2CC"><b>SubcategoryId</b> (PK)</td><td align="left">INTEGER</td></tr>
+        <tr><td align="left" bgcolor="#DDEBF7"><b>CategoryId</b> (FK)</td><td align="left">INTEGER</td></tr>
+        <tr><td align="left">SubcategoryName</td><td align="left">TEXT</td></tr>
+    </table>>];
+
+    products [label=<<table border="1" cellborder="1" cellspacing="0" cellpadding="3">
+        <tr><td bgcolor="#70B2AF" colspan="2" align="center"><b>Products</b></td></tr>
+        <tr><td align="left" bgcolor="#FFF2CC"><b>ProductId</b> (PK)</td><td align="left">INTEGER</td></tr>
+        <tr><td align="left" bgcolor="#DDEBF7"><b>SubcategoryId</b> (FK)</td><td align="left">INTEGER</td></tr>
+        <tr><td align="left">ProductName</td><td align="left">TEXT</td></tr>
+        <tr><td align="left">Manufacturer</td><td align="left">TEXT</td></tr>
+        <tr><td align="left">Description</td><td align="left">TEXT</td></tr>
+        <tr><td align="left">Composition</td><td align="left">TEXT</td></tr>
+        <tr><td align="left">Price</td><td align="left">REAL</td></tr>
+        <tr><td align="left">ImageName</td><td align="left">TEXT</td></tr>
+    </table>>];
+
+    product_sizes [label=<<table border="1" cellborder="1" cellspacing="0" cellpadding="3">
+        <tr><td bgcolor="#70B2AF" colspan="2" align="center"><b>ProductSizes</b></td></tr>
+        <tr><td align="left" bgcolor="#FFF2CC"><b>ProductSizeId</b> (PK)</td><td align="left">INTEGER</td></tr>
+        <tr><td align="left" bgcolor="#DDEBF7"><b>ProductId</b> (FK)</td><td align="left">INTEGER</td></tr>
+        <tr><td align="left">Size</td><td align="left">TEXT</td></tr>
+        <tr><td align="left">Quantity</td><td align="left">INTEGER</td></tr>
+    </table>>];
+
+    orders [label=<<table border="1" cellborder="1" cellspacing="0" cellpadding="3">
+        <tr><td bgcolor="#70B2AF" colspan="2" align="center"><b>Orders</b></td></tr>
+        <tr><td align="left" bgcolor="#FFF2CC"><b>OrderId</b> (PK)</td><td align="left">INTEGER</td></tr>
+        <tr><td align="left">OrderDate</td><td align="left">TEXT (ISO)</td></tr>
+        <tr><td align="left">CustomerName</td><td align="left">TEXT</td></tr>
+        <tr><td align="left" bgcolor="#DDEBF7"><b>UserId</b> (FK)</td><td align="left">INTEGER, NULL</td></tr>
+    </table>>];
+
+    order_items [label=<<table border="1" cellborder="1" cellspacing="0" cellpadding="3">
+        <tr><td bgcolor="#70B2AF" colspan="2" align="center"><b>OrderItems</b></td></tr>
+        <tr><td align="left" bgcolor="#FFF2CC"><b>OrderItemId</b> (PK)</td><td align="left">INTEGER</td></tr>
+        <tr><td align="left" bgcolor="#DDEBF7"><b>OrderId</b> (FK)</td><td align="left">INTEGER</td></tr>
+        <tr><td align="left" bgcolor="#DDEBF7"><b>ProductSizeId</b> (FK)</td><td align="left">INTEGER</td></tr>
+        <tr><td align="left">Quantity</td><td align="left">INTEGER</td></tr>
+        <tr><td align="left">UnitPrice</td><td align="left">REAL</td></tr>
+        <tr><td align="left">DiscountPercent</td><td align="left">REAL</td></tr>
+    </table>>];
+
+    { rank=same; roles; categories; }
+    { rank=same; users; subcategories; }
+    { rank=same; orders; products; }
+    { rank=same; product_sizes; }
+    { rank=same; order_items; }
+
+    roles -> users [label="1 : N"];
+    users -> orders [label="1 : N"];
+    categories -> subcategories [label="1 : N"];
+    subcategories -> products [label="1 : N"];
+    products -> product_sizes [label="1 : N"];
+    product_sizes -> order_items [label="1 : N"];
+    orders -> order_items [label="1 : N"];
+
+    legend [label=<<table border="0" cellborder="0" cellpadding="2">
+        <tr><td align="left" bgcolor="#FFF2CC"><b>PK</b></td><td align="left">первичный ключ</td></tr>
+        <tr><td align="left" bgcolor="#DDEBF7"><b>FK</b></td><td align="left">внешний ключ</td></tr>
+        <tr><td align="left">1 : N</td><td align="left">связь «один ко многим»</td></tr>
+    </table>>];
+}

@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>ChudoObuv.WinForms</RootNamespace>
+    <AssemblyName>ChudoObuv</AssemblyName>
+    <ApplicationIcon>app.ico</ApplicationIcon>
+    <Product>Чудо Обувь</Product>
+    <AssemblyTitle>Чудо Обувь — система оформления заказов</AssemblyTitle>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ChudoObuv.Core\ChudoObuv.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Images\logo.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Images\placeholder.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Data\chudo_obuv.db" CopyToOutputDirectory="PreserveNewest" TargetPath="chudo_obuv.db" />
+  </ItemGroup>
+
+</Project>
