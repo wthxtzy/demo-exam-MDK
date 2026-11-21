@@ -3,6 +3,7 @@ using ChudoObuv.Core;
 namespace ChudoObuv.WinForms;
 
 /// <summary>Главное окно: каталог, корзина и заказы.</summary>
+// Разметка формы находится в MainForm.Designer.cs — это стандартное разделение WinForms.
 public partial class MainForm : Form
 {
     private readonly Database _database = null!;
@@ -19,7 +20,6 @@ public partial class MainForm : Form
     public MainForm()
     {
         InitializeComponent();
-        ApplyTheme();
     }
 
     public MainForm(Database database, UserSession session) : this()
@@ -28,6 +28,7 @@ public partial class MainForm : Form
         _session = session;
         _catalogService = new CatalogService(database);
         _orderService = new OrderService(database);
+        ApplyTheme();
 
         _userLabel.Text = $"{_session.FullName} ({_session.RoleDisplayName})";
         _databaseStatusLabel.Text = $"БД: {Path.GetFileName(_database.DatabasePath)}";

@@ -3,6 +3,7 @@ using ChudoObuv.Core;
 namespace ChudoObuv.WinForms;
 
 /// <summary>Вход по логину. Пароль по заданию не требуется.</summary>
+// Разметка формы находится в LoginForm.Designer.cs — это стандартное разделение WinForms.
 public partial class LoginForm : Form
 {
     private AuthService? _authService;
@@ -12,12 +13,12 @@ public partial class LoginForm : Form
     public LoginForm()
     {
         InitializeComponent();
-        ApplyTheme();
     }
 
     public LoginForm(Database database) : this()
     {
         _authService = new AuthService(database);
+        ApplyTheme();
     }
 
     private void ApplyTheme()

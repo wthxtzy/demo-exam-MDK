@@ -17,7 +17,7 @@
 Откройте папку `publish/win-x64` и запустите **`ChudoObuv.exe`**.
 
 > На GitHub готовый архив лежит в разделе
-> [Releases → v1.1](https://github.com/wthxtzy/demo-exam-MDK/releases/tag/v1.1):
+> [Releases → v1.2](https://github.com/wthxtzy/demo-exam-MDK/releases/tag/v1.2):
 > скачайте `ChudoObuv_win-x64.zip`, распакуйте и запустите `ChudoObuv.exe`.
 >
 > В локальном архиве `dist/ChudoObuv_win-x64.zip` эта же сборка лежит в корне
@@ -64,6 +64,14 @@ dotnet run --project src/ChudoObuv.WinForms
    «Просмотреть конструктор» в контекстном меню файла.
 4. Конструктор показывает макет формы. Данные (товары, заказы, остатки)
    загружаются при запуске приложения, поэтому в конструкторе таблицы пустые.
+
+> **Важно.** Код элементов управления находится в `MainForm.Designer.cs`
+> (аналогично `LoginForm.Designer.cs` и `OrderEditForm.Designer.cs`), а
+> `MainForm.cs` содержит только логику. Это стандартное разделение WinForms:
+> оба файла — части одного класса. Если открыть `MainForm.cs` в редакторе кода,
+> он и не должен содержать `InitializeComponent`. Чтобы увидеть элементы,
+> откройте конструктор (Shift+F7) или раскройте `MainForm.cs` в Solution
+> Explorer и откройте `MainForm.Designer.cs`.
 
 Для дизайнера у форм есть пустые конструкторы без параметров; рабочие
 конструкторы принимают базу данных и сессию пользователя. Если конструктор

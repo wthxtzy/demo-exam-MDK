@@ -3,6 +3,7 @@ using ChudoObuv.Core;
 namespace ChudoObuv.WinForms;
 
 /// <summary>Создание и редактирование заказа.</summary>
+// Разметка формы находится в OrderEditForm.Designer.cs — это стандартное разделение WinForms.
 public partial class OrderEditForm : Form
 {
     private readonly UserSession _session = null!;
@@ -18,7 +19,6 @@ public partial class OrderEditForm : Form
     public OrderEditForm()
     {
         InitializeComponent();
-        ApplyTheme();
     }
 
     public OrderEditForm(
@@ -31,6 +31,7 @@ public partial class OrderEditForm : Form
         _orderId = orderId;
         _catalogService = new CatalogService(database);
         _orderService = new OrderService(database);
+        ApplyTheme();
 
         Text = orderId.HasValue
             ? $"Чудо Обувь — заказ №{orderId.Value}"
