@@ -16,8 +16,12 @@
 
 Откройте папку `publish/win-x64` и запустите **`ChudoObuv.exe`**.
 
-> В архиве `dist/ChudoObuv_win-x64.zip` эта же сборка лежит в корне папки
-> `ChudoObuv` — просто запустите `ChudoObuv.exe`.
+> На GitHub готовый архив лежит в разделе
+> [Releases → v1.0](https://github.com/wthxtzy/demo-exam-MDK/releases/tag/v1.0):
+> скачайте `ChudoObuv_win-x64.zip`, распакуйте и запустите `ChudoObuv.exe`.
+>
+> В локальном архиве `dist/ChudoObuv_win-x64.zip` эта же сборка лежит в корне
+> папки `ChudoObuv`.
 
 Это self-contained сборка: .NET 8 и SQLite уже внутри, устанавливать ничего не
 нужно. Рядом с exe должны лежать:
