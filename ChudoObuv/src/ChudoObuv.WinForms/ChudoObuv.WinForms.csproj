@@ -20,9 +20,32 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="LoginForm.Designer.cs">
+      <DependentUpon>LoginForm.cs</DependentUpon>
+    </Compile>
+    <Compile Update="MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Update="OrderEditForm.Designer.cs">
+      <DependentUpon>OrderEditForm.cs</DependentUpon>
+    </Compile>
+    <EmbeddedResource Update="LoginForm.resx">
+      <DependentUpon>LoginForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="MainForm.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Update="OrderEditForm.resx">
+      <DependentUpon>OrderEditForm.cs</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="Images\logo.png" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Images\placeholder.png" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Data\chudo_obuv.db" CopyToOutputDirectory="PreserveNewest" TargetPath="chudo_obuv.db" />
+    <EmbeddedResource Include="Images\logo.png" LogicalName="ChudoObuv.WinForms.logo.png" />
+    <EmbeddedResource Include="Images\placeholder.png" LogicalName="ChudoObuv.WinForms.placeholder.png" />
   </ItemGroup>
 
 </Project>

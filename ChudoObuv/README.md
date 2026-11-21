@@ -17,7 +17,7 @@
 Откройте папку `publish/win-x64` и запустите **`ChudoObuv.exe`**.
 
 > На GitHub готовый архив лежит в разделе
-> [Releases → v1.0](https://github.com/wthxtzy/demo-exam-MDK/releases/tag/v1.0):
+> [Releases → v1.1](https://github.com/wthxtzy/demo-exam-MDK/releases/tag/v1.1):
 > скачайте `ChudoObuv_win-x64.zip`, распакуйте и запустите `ChudoObuv.exe`.
 >
 > В локальном архиве `dist/ChudoObuv_win-x64.zip` эта же сборка лежит в корне
@@ -27,7 +27,7 @@
 нужно. Рядом с exe должны лежать:
 
 - `chudo_obuv.db` — готовая база с данными;
-- папка `Images` — логотип и картинка-заглушка.
+- папка `Images` — файлы изображений товаров; логотип и заглушка также встроены в exe.
 
 Если файл базы удалить, приложение создаст его заново из встроенных скриптов
 `schema.sql` и `seed.sql`.
@@ -44,6 +44,31 @@ dotnet run --project src/ChudoObuv.WinForms
 
 Либо откройте `ChudoObuv.sln` в Visual Studio и запустите проект
 `ChudoObuv.WinForms`.
+
+### Открытие в конструкторе WinForms
+
+Формы проекта — стандартные `partial`-классы с файлами `*.Designer.cs` и
+`*.resx`:
+
+- `LoginForm`;
+- `MainForm`;
+- `OrderEditForm`.
+
+Поэтому их можно открывать в конструкторе Visual Studio.
+
+1. Нужна Visual Studio 2022 версии **17.8 или новее** с установленным
+   компонентом «Разработка классических приложений .NET» (.NET 8).
+2. Откройте `ChudoObuv.sln` и дождитесь восстановления NuGet-пакетов.
+3. Дважды щёлкните по `MainForm.cs`, `LoginForm.cs` или `OrderEditForm.cs`.
+   Если открылся код — нажмите **Shift+F7** или выберите
+   «Просмотреть конструктор» в контекстном меню файла.
+4. Конструктор показывает макет формы. Данные (товары, заказы, остатки)
+   загружаются при запуске приложения, поэтому в конструкторе таблицы пустые.
+
+Для дизайнера у форм есть пустые конструкторы без параметров; рабочие
+конструкторы принимают базу данных и сессию пользователя. Если конструктор
+пишет, что форму нельзя показать, сначала соберите решение (`Build`), затем
+откройте форму повторно.
 
 ### Тесты бизнес-логики
 
@@ -172,6 +197,10 @@ ChudoObuv/
 ├── src/
 │   ├── ChudoObuv.Core/          — БД, модели, авторизация, каталог, заказы
 │   └── ChudoObuv.WinForms/      — формы WinForms
+│       ├── LoginForm.cs / LoginForm.Designer.cs / LoginForm.resx
+│       ├── MainForm.cs / MainForm.Designer.cs / MainForm.resx
+│       ├── OrderEditForm.cs / OrderEditForm.Designer.cs / OrderEditForm.resx
+│       └── остальные классы интерфейса и ресурсы
 ├── tests/
 │   └── ChudoObuv.Tests/         — консольные интеграционные тесты
 ├── database/

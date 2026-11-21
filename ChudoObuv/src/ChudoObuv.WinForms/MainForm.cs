@@ -3,755 +3,86 @@ using ChudoObuv.Core;
 namespace ChudoObuv.WinForms;
 
 /// <summary>Главное окно: каталог, корзина и заказы.</summary>
-public sealed class MainForm : Form
+public partial class MainForm : Form
 {
-    private readonly Database _database;
-    private readonly UserSession _session;
-    private readonly CatalogService _catalogService;
-    private readonly OrderService _orderService;
+    private readonly Database _database = null!;
+    private readonly UserSession _session = null!;
+    private readonly CatalogService _catalogService = null!;
+    private readonly OrderService _orderService = null!;
     private readonly Cart _cart = new();
-
-    private TabControl _tabs = null!;
-    private TabPage _catalogTab = null!;
-    private TabPage _cartTab = null!;
-    private TabPage _ordersTab = null!;
-
-    private Panel _filterPanel = null!;
-    private TextBox _searchTextBox = null!;
-    private ComboBox _categoryComboBox = null!;
-    private ComboBox _sortComboBox = null!;
-    private SplitContainer _catalogSplit = null!;
-    private SplitContainer _ordersSplit = null!;
-
-    private DataGridView _productsGrid = null!;
-    private DataGridView _cartGrid = null!;
-    private DataGridView _ordersGrid = null!;
-    private DataGridView _orderItemsGrid = null!;
-
-    private PictureBox _productPicture = null!;
-    private Label _productNameLabel = null!;
-    private Label _productInfoLabel = null!;
-    private Label _priceLabel = null!;
-    private Label _stockLabel = null!;
-    private Label _descriptionLabel = null!;
-    private Label _compositionLabel = null!;
-    private Label _guestHintLabel = null!;
-    private ComboBox _sizeComboBox = null!;
-    private NumericUpDown _quantityNumeric = null!;
-    private Button _addToCartButton = null!;
-
-    private Label _cartTotalLabel = null!;
-    private Button _checkoutButton = null!;
-    private Button _removeCartButton = null!;
-    private Button _clearCartButton = null!;
-
-    private Label _orderHeaderLabel = null!;
-    private Label _orderTotalLabel = null!;
-    private Button _newOrderButton = null!;
-    private Button _editOrderButton = null!;
-    private Button _deleteOrderButton = null!;
-
-    private StatusStrip _statusStrip = null!;
-    private ToolStripStatusLabel _statusLabel = null!;
 
     private List<ProductView> _products = new();
     private ProductView? _selectedProduct;
     private bool _loadingCatalog;
     private bool _permissionsApplied;
 
-    public MainForm(Database database, UserSession session)
+    public MainForm()
+    {
+        InitializeComponent();
+        ApplyTheme();
+    }
+
+    public MainForm(Database database, UserSession session) : this()
     {
         _database = database;
         _session = session;
         _catalogService = new CatalogService(database);
         _orderService = new OrderService(database);
 
-        Text = "Чудо Обувь — оформление заказов";
-        ClientSize = new Size(1280, 800);
-        MinimumSize = new Size(1100, 700);
-        StartPosition = FormStartPosition.CenterScreen;
-        UiTheme.ApplyForm(this);
+        _userLabel.Text = $"{_session.FullName} ({_session.RoleDisplayName})";
+        _databaseStatusLabel.Text = $"БД: {Path.GetFileName(_database.DatabasePath)}";
 
-        BuildInterface();
         ApplyPermissions();
         LoadFilterData();
         LoadCatalog();
         RefreshCart();
         LoadOrders();
-
-        Shown += MainForm_Shown;
-        FormClosing += MainForm_FormClosing;
     }
 
-    private void BuildInterface()
+    private void ApplyTheme()
     {
-        var header = BuildHeader();
-        _tabs = new TabControl
-        {
-            Dock = DockStyle.Fill,
-            Font = UiTheme.BaseFont,
-            Padding = new Point(18, 6)
-        };
-
-        _catalogTab = BuildCatalogTab();
-        _cartTab = BuildCartTab();
-        _ordersTab = BuildOrdersTab();
-
-        _tabs.TabPages.Add(_catalogTab);
-        _tabs.TabPages.Add(_cartTab);
-        _tabs.TabPages.Add(_ordersTab);
-
-        _statusStrip = new StatusStrip { SizingGrip = false };
-        _statusLabel = new ToolStripStatusLabel("Готово") { Spring = true, TextAlign = ContentAlignment.MiddleLeft };
-        var databaseLabel = new ToolStripStatusLabel($"БД: {Path.GetFileName(_database.DatabasePath)}")
-        {
-            TextAlign = ContentAlignment.MiddleRight,
-            ForeColor = Color.DimGray
-        };
-        _statusStrip.Items.Add(_statusLabel);
-        _statusStrip.Items.Add(databaseLabel);
-
-        // Порядок добавления задаёт порядок докинга: Fill, Bottom, Top.
-        Controls.Add(_tabs);
-        Controls.Add(_statusStrip);
-        Controls.Add(header);
-    }
-
-    private Panel BuildHeader()
-    {
-        var header = new Panel
-        {
-            Dock = DockStyle.Top,
-            Height = 64,
-            BackColor = Color.White,
-            Padding = new Padding(8)
-        };
-
-        var logo = new PictureBox
-        {
-            Location = new Point(10, 8),
-            Size = new Size(48, 48),
-            SizeMode = PictureBoxSizeMode.Zoom,
-            Image = ImageResources.Logo,
-            BackColor = Color.White
-        };
-
-        var title = new Label
-        {
-            Text = "Чудо Обувь — оформление заказов",
-            Font = UiTheme.SubtitleFont,
-            AutoSize = true,
-            Location = new Point(70, 19)
-        };
-
-        var userLabel = new Label
-        {
-            Text = $"{_session.FullName} ({_session.RoleDisplayName})",
-            TextAlign = ContentAlignment.MiddleRight,
-            AutoSize = false,
-            Size = new Size(430, 40),
-            ForeColor = Color.DimGray,
-            Anchor = AnchorStyles.Top | AnchorStyles.Right
-        };
-
-        var logoutButton = UiTheme.CreateButton("Выход", false, 90);
-        logoutButton.Height = 32;
-        logoutButton.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        logoutButton.Click += (_, _) => Close();
-
-        header.Controls.AddRange(new Control[] { logo, title, userLabel, logoutButton });
-
-        userLabel.Location = new Point(Math.Max(360, ClientSize.Width - 540), 12);
-        logoutButton.Location = new Point(Math.Max(820, ClientSize.Width - 102), 16);
-        header.Resize += (_, _) =>
-        {
-            userLabel.Location = new Point(Math.Max(360, header.ClientSize.Width - 540), 12);
-            logoutButton.Location = new Point(Math.Max(820, header.ClientSize.Width - 102), 16);
-        };
-
-        return header;
-    }
-
-    private TabPage BuildCatalogTab()
-    {
-        var page = new TabPage("Каталог")
-        {
-            BackColor = Color.White,
-            Padding = new Padding(6),
-            UseVisualStyleBackColor = false
-        };
-
-        _filterPanel = new Panel
-        {
-            Dock = DockStyle.Top,
-            Height = 50,
-            BackColor = UiTheme.Secondary,
-            Padding = new Padding(4)
-        };
-
-        var filterFlow = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            FlowDirection = FlowDirection.LeftToRight,
-            WrapContents = false,
-            AutoScroll = true
-        };
-
-        filterFlow.Controls.Add(CreateFilterLabel("Поиск:"));
-        _searchTextBox = new TextBox
-        {
-            Width = 230,
-            Margin = new Padding(0, 10, 14, 0),
-            Font = UiTheme.BaseFont
-        };
-        _searchTextBox.TextChanged += (_, _) => LoadCatalog();
-        filterFlow.Controls.Add(_searchTextBox);
-
-        filterFlow.Controls.Add(CreateFilterLabel("Категория:"));
-        _categoryComboBox = new ComboBox
-        {
-            Width = 190,
-            DropDownStyle = ComboBoxStyle.DropDownList,
-            Margin = new Padding(0, 10, 14, 0),
-            Font = UiTheme.BaseFont
-        };
-        _categoryComboBox.SelectedIndexChanged += (_, _) => LoadCatalog();
-        filterFlow.Controls.Add(_categoryComboBox);
-
-        filterFlow.Controls.Add(CreateFilterLabel("Сортировка:"));
-        _sortComboBox = new ComboBox
-        {
-            Width = 230,
-            DropDownStyle = ComboBoxStyle.DropDownList,
-            Margin = new Padding(0, 10, 14, 0),
-            Font = UiTheme.BaseFont
-        };
-        _sortComboBox.SelectedIndexChanged += (_, _) => LoadCatalog();
-        filterFlow.Controls.Add(_sortComboBox);
-
-        var resetButton = UiTheme.CreateButton("Сбросить", false, 100);
-        resetButton.Height = 30;
-        resetButton.Margin = new Padding(0, 8, 0, 0);
-        resetButton.Click += (_, _) => ResetFilters();
-        filterFlow.Controls.Add(resetButton);
-
-        _filterPanel.Controls.Add(filterFlow);
-
-        _catalogSplit = new SplitContainer
-        {
-            Dock = DockStyle.Fill,
-            Orientation = Orientation.Vertical,
-            SplitterWidth = 6,
-            FixedPanel = FixedPanel.Panel2,
-            BackColor = UiTheme.Secondary
-        };
-        _catalogSplit.Panel1.BackColor = Color.White;
-        _catalogSplit.Panel2.BackColor = UiTheme.Secondary;
-
-        _productsGrid = CreateProductsGrid();
-        _catalogSplit.Panel1.Controls.Add(_productsGrid);
-
-        var detailsFlow = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            FlowDirection = FlowDirection.TopDown,
-            WrapContents = false,
-            AutoScroll = true,
-            Padding = new Padding(10),
-            BackColor = UiTheme.Secondary
-        };
-
-        _productPicture = new PictureBox
-        {
-            Width = 300,
-            Height = 210,
-            SizeMode = PictureBoxSizeMode.Zoom,
-            BackColor = Color.White,
-            Margin = new Padding(0, 0, 0, 8)
-        };
-        _productNameLabel = new Label
-        {
-            AutoSize = true,
-            MaximumSize = new Size(300, 0),
-            Font = UiTheme.SubtitleFont,
-            Margin = new Padding(0, 0, 0, 4)
-        };
-        _productInfoLabel = new Label
-        {
-            AutoSize = true,
-            MaximumSize = new Size(300, 0),
-            ForeColor = Color.DimGray,
-            Margin = new Padding(0, 0, 0, 8)
-        };
-        _priceLabel = new Label
-        {
-            AutoSize = true,
-            Font = new Font("Calibri", 12F, FontStyle.Bold),
-            ForeColor = UiTheme.AccentDark,
-            Margin = new Padding(0, 0, 0, 4)
-        };
-        _stockLabel = new Label
-        {
-            AutoSize = true,
-            Font = UiTheme.BoldFont,
-            Margin = new Padding(0, 0, 0, 8)
-        };
-        _descriptionLabel = new Label
-        {
-            AutoSize = true,
-            MaximumSize = new Size(300, 0),
-            Margin = new Padding(0, 0, 0, 6)
-        };
-        _compositionLabel = new Label
-        {
-            AutoSize = true,
-            MaximumSize = new Size(300, 0),
-            ForeColor = Color.DimGray,
-            Margin = new Padding(0, 0, 0, 8)
-        };
-
-        var delimiter = new Panel
-        {
-            Width = 300,
-            Height = 1,
-            BackColor = Color.Silver,
-            Margin = new Padding(0, 2, 0, 8)
-        };
-
-        _sizeComboBox = new ComboBox
-        {
-            Width = 300,
-            DropDownStyle = ComboBoxStyle.DropDownList,
-            Font = UiTheme.BaseFont,
-            Margin = new Padding(0, 2, 0, 6)
-        };
-        _sizeComboBox.SelectedIndexChanged += SizeComboBox_SelectedIndexChanged;
-
-        _quantityNumeric = new NumericUpDown
-        {
-            Width = 100,
-            Minimum = 1,
-            Maximum = 1,
-            Value = 1,
-            Font = UiTheme.BaseFont,
-            Margin = new Padding(0, 2, 0, 8)
-        };
-
-        _addToCartButton = UiTheme.CreateButton("Добавить в корзину", true, 300);
-        _addToCartButton.Click += AddToCartButton_Click;
-
-        _guestHintLabel = new Label
-        {
-            Text = "Для оформления заказа войдите как пользователь.",
-            AutoSize = true,
-            MaximumSize = new Size(300, 0),
-            ForeColor = Color.Firebrick,
-            Font = UiTheme.BoldFont,
-            Visible = false,
-            Margin = new Padding(0, 6, 0, 0)
-        };
-
-        var detailsBottom = new Panel
-        {
-            Dock = DockStyle.Bottom,
-            Height = 150,
-            BackColor = UiTheme.Secondary,
-            Padding = new Padding(10)
-        };
-
-        var sizeCaption = UiTheme.CreateLabel("Размер:");
-        sizeCaption.Location = new Point(10, 4);
-        sizeCaption.Margin = Padding.Empty;
-        _sizeComboBox.Location = new Point(10, 24);
-
-        var quantityCaption = UiTheme.CreateLabel("Количество:");
-        quantityCaption.Location = new Point(10, 58);
-        quantityCaption.Margin = Padding.Empty;
-        _quantityNumeric.Location = new Point(10, 78);
-
-        _addToCartButton.Location = new Point(10, 108);
-
-        detailsBottom.Controls.AddRange(new Control[]
-        {
-            sizeCaption, _sizeComboBox, quantityCaption, _quantityNumeric, _addToCartButton
-        });
-
-        detailsFlow.Controls.AddRange(new Control[]
-        {
-            _productPicture, _productNameLabel, _productInfoLabel, _priceLabel, _stockLabel,
-            _descriptionLabel, _compositionLabel, delimiter, _guestHintLabel
-        });
-
-        _catalogSplit.Panel2.Controls.Add(detailsFlow);
-        _catalogSplit.Panel2.Controls.Add(detailsBottom);
-
-        // Сначала Fill, затем Top: панель фильтров останется сверху.
-        page.Controls.Add(_catalogSplit);
-        page.Controls.Add(_filterPanel);
-
-        return page;
-    }
-
-    private DataGridView CreateProductsGrid()
-    {
-        var grid = new DataGridView
-        {
-            Dock = DockStyle.Fill,
-            AutoGenerateColumns = false,
-            ReadOnly = true,
-            AllowUserToAddRows = false,
-            AllowUserToDeleteRows = false,
-            AllowUserToResizeRows = false,
-            RowHeadersVisible = false,
-            SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-            MultiSelect = false,
-            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill,
-            ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing,
-            BackgroundColor = Color.White
-        };
-
-        grid.Columns.Add(new DataGridViewImageColumn
-        {
-            Name = "Image",
-            HeaderText = "",
-            FillWeight = 55,
-            MinimumWidth = 50,
-            ImageLayout = DataGridViewImageCellLayout.Zoom,
-            ValuesAreIcons = false
-        });
-        grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Category", HeaderText = "Категория", FillWeight = 80, MinimumWidth = 80 });
-        grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Subcategory", HeaderText = "Подкатегория", FillWeight = 80, MinimumWidth = 80 });
-        grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "ProductName", HeaderText = "Наименование", FillWeight = 190, MinimumWidth = 160 });
-        grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Manufacturer", HeaderText = "Производство", FillWeight = 110, MinimumWidth = 100 });
-        grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Composition", HeaderText = "Состав", FillWeight = 250, MinimumWidth = 180 });
-        grid.Columns.Add(new DataGridViewTextBoxColumn
-        {
-            Name = "Price",
-            HeaderText = "Цена со скидкой",
-            FillWeight = 95,
-            DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight }
-        });
-        grid.Columns.Add(new DataGridViewTextBoxColumn
-        {
-            Name = "Discount",
-            HeaderText = "Скидка",
-            FillWeight = 60,
-            DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter }
-        });
-        grid.Columns.Add(new DataGridViewTextBoxColumn
-        {
-            Name = "Quantity",
-            HeaderText = "Кол-во",
-            FillWeight = 60,
-            DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter }
-        });
-        grid.Columns.Add(new DataGridViewTextBoxColumn
-        {
-            Name = "Stock",
-            HeaderText = "Наличие",
-            FillWeight = 65,
-            DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter }
-        });
-
-        grid.RowTemplate.Height = 64;
-        grid.SelectionChanged += ProductsGrid_SelectionChanged;
-        grid.CellFormatting += ProductsGrid_CellFormatting;
-        UiTheme.StyleGrid(grid);
-        return grid;
-    }
-
-    private TabPage BuildCartTab()
-    {
-        var page = new TabPage("Корзина")
-        {
-            BackColor = Color.White,
-            Padding = new Padding(6),
-            UseVisualStyleBackColor = false
-        };
-
-        var hint = new Label
-        {
-            Text = "Проверьте состав заказа и оформите его.",
-            Dock = DockStyle.Top,
-            Height = 32,
-            Font = UiTheme.BoldFont,
-            TextAlign = ContentAlignment.MiddleLeft,
-            ForeColor = Color.DimGray
-        };
-
-        _cartGrid = new DataGridView
-        {
-            Dock = DockStyle.Fill,
-            AutoGenerateColumns = false,
-            ReadOnly = true,
-            AllowUserToAddRows = false,
-            AllowUserToDeleteRows = false,
-            RowHeadersVisible = false,
-            SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-            MultiSelect = false,
-            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
-        };
-        _cartGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Product", HeaderText = "Товар", FillWeight = 320 });
-        _cartGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Size", HeaderText = "Размер", FillWeight = 70 });
-        _cartGrid.Columns.Add(new DataGridViewTextBoxColumn
-        {
-            Name = "Price",
-            HeaderText = "Цена",
-            FillWeight = 100,
-            DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight }
-        });
-        _cartGrid.Columns.Add(new DataGridViewTextBoxColumn
-        {
-            Name = "Quantity",
-            HeaderText = "Кол-во",
-            FillWeight = 70,
-            DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter }
-        });
-        _cartGrid.Columns.Add(new DataGridViewTextBoxColumn
-        {
-            Name = "Sum",
-            HeaderText = "Сумма",
-            FillWeight = 110,
-            DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight }
-        });
+        UiTheme.ApplyForm(this);
+        _logoPictureBox.Image = ImageResources.Logo;
+        UiTheme.StyleGrid(_productsGrid);
         UiTheme.StyleGrid(_cartGrid);
-
-        var bottomPanel = new Panel
-        {
-            Dock = DockStyle.Bottom,
-            Height = 64,
-            BackColor = UiTheme.Secondary,
-            Padding = new Padding(8)
-        };
-
-        _cartTotalLabel = new Label
-        {
-            Text = "Итого: 0,00 ₽",
-            Font = new Font("Calibri", 13F, FontStyle.Bold),
-            AutoSize = true,
-            Location = new Point(10, 18)
-        };
-
-        _removeCartButton = UiTheme.CreateButton("Удалить позицию", false, 150);
-        _removeCartButton.Location = new Point(360, 14);
-        _removeCartButton.Click += RemoveCartButton_Click;
-
-        _clearCartButton = UiTheme.CreateButton("Очистить", false, 110);
-        _clearCartButton.Location = new Point(520, 14);
-        _clearCartButton.Click += ClearCartButton_Click;
-
-        _checkoutButton = UiTheme.CreateButton("Оформить заказ", true, 180);
-        _checkoutButton.Location = new Point(640, 14);
-        _checkoutButton.Click += CheckoutButton_Click;
-
-        bottomPanel.Controls.AddRange(new Control[]
-        {
-            _cartTotalLabel, _removeCartButton, _clearCartButton, _checkoutButton
-        });
-
-        page.Controls.Add(_cartGrid);
-        page.Controls.Add(bottomPanel);
-        page.Controls.Add(hint);
-
-        page.Enter += (_, _) => RefreshCart();
-        return page;
-    }
-
-    private TabPage BuildOrdersTab()
-    {
-        var page = new TabPage("Заказы")
-        {
-            BackColor = Color.White,
-            Padding = new Padding(6),
-            UseVisualStyleBackColor = false
-        };
-
-        var topPanel = new Panel
-        {
-            Dock = DockStyle.Top,
-            Height = 50,
-            BackColor = UiTheme.Secondary,
-            Padding = new Padding(6)
-        };
-
-        var topFlow = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Fill,
-            FlowDirection = FlowDirection.LeftToRight,
-            WrapContents = false
-        };
-
-        var title = new Label
-        {
-            Text = "Список заказов",
-            Font = UiTheme.SubtitleFont,
-            AutoSize = true,
-            Margin = new Padding(4, 8, 20, 0)
-        };
-        topFlow.Controls.Add(title);
-
-        _newOrderButton = UiTheme.CreateButton("Новый заказ", true, 140);
-        _newOrderButton.Height = 30;
-        _newOrderButton.Margin = new Padding(0, 6, 6, 0);
-        _newOrderButton.Click += NewOrderButton_Click;
-        topFlow.Controls.Add(_newOrderButton);
-
-        _editOrderButton = UiTheme.CreateButton("Редактировать", false, 150);
-        _editOrderButton.Height = 30;
-        _editOrderButton.Margin = new Padding(0, 6, 6, 0);
-        _editOrderButton.Click += EditOrderButton_Click;
-        topFlow.Controls.Add(_editOrderButton);
-
-        _deleteOrderButton = UiTheme.CreateButton("Удалить", false, 110);
-        _deleteOrderButton.Height = 30;
-        _deleteOrderButton.Margin = new Padding(0, 6, 6, 0);
-        _deleteOrderButton.Click += DeleteOrderButton_Click;
-        topFlow.Controls.Add(_deleteOrderButton);
-
-        var refreshButton = UiTheme.CreateButton("Обновить", false, 110);
-        refreshButton.Height = 30;
-        refreshButton.Margin = new Padding(0, 6, 0, 0);
-        refreshButton.Click += (_, _) => LoadOrders();
-        topFlow.Controls.Add(refreshButton);
-
-        topPanel.Controls.Add(topFlow);
-
-        _ordersSplit = new SplitContainer
-        {
-            Dock = DockStyle.Fill,
-            Orientation = Orientation.Vertical,
-            SplitterWidth = 6,
-            FixedPanel = FixedPanel.Panel2,
-            BackColor = UiTheme.Secondary
-        };
-        _ordersSplit.Panel1.BackColor = Color.White;
-        _ordersSplit.Panel2.BackColor = Color.White;
-
-        _ordersGrid = new DataGridView
-        {
-            Dock = DockStyle.Fill,
-            AutoGenerateColumns = false,
-            ReadOnly = true,
-            AllowUserToAddRows = false,
-            AllowUserToDeleteRows = false,
-            RowHeadersVisible = false,
-            SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-            MultiSelect = false,
-            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
-        };
-        _ordersGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Id", HeaderText = "№", FillWeight = 45 });
-        _ordersGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Date", HeaderText = "Дата", FillWeight = 85 });
-        _ordersGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Customer", HeaderText = "Клиент", FillWeight = 190 });
-        _ordersGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Creator", HeaderText = "Оформил", FillWeight = 150 });
-        _ordersGrid.Columns.Add(new DataGridViewTextBoxColumn
-        {
-            Name = "Positions",
-            HeaderText = "Позиций",
-            FillWeight = 65,
-            DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter }
-        });
-        _ordersGrid.Columns.Add(new DataGridViewTextBoxColumn
-        {
-            Name = "Total",
-            HeaderText = "Сумма",
-            FillWeight = 120,
-            MinimumWidth = 110,
-            DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight }
-        });
-        _ordersGrid.SelectionChanged += OrdersGrid_SelectionChanged;
         UiTheme.StyleGrid(_ordersGrid);
-
-        var detailsPanel = new Panel
-        {
-            Dock = DockStyle.Fill,
-            BackColor = Color.White,
-            Padding = new Padding(8)
-        };
-
-        var orderHeaderPanel = new Panel
-        {
-            Dock = DockStyle.Top,
-            Height = 100,
-            BackColor = UiTheme.Secondary,
-            Padding = new Padding(8)
-        };
-
-        _orderHeaderLabel = new Label
-        {
-            Dock = DockStyle.Fill,
-            Font = UiTheme.BoldFont,
-            TextAlign = ContentAlignment.TopLeft
-        };
-
-        _orderTotalLabel = new Label
-        {
-            Dock = DockStyle.Bottom,
-            Height = 26,
-            Font = new Font("Calibri", 12F, FontStyle.Bold),
-            TextAlign = ContentAlignment.MiddleRight,
-            ForeColor = UiTheme.AccentDark
-        };
-
-        orderHeaderPanel.Controls.Add(_orderHeaderLabel);
-        orderHeaderPanel.Controls.Add(_orderTotalLabel);
-
-        _orderItemsGrid = new DataGridView
-        {
-            Dock = DockStyle.Fill,
-            AutoGenerateColumns = false,
-            ReadOnly = true,
-            AllowUserToAddRows = false,
-            AllowUserToDeleteRows = false,
-            RowHeadersVisible = false,
-            SelectionMode = DataGridViewSelectionMode.FullRowSelect,
-            MultiSelect = false,
-            AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill
-        };
-        _orderItemsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Product", HeaderText = "Товар", FillWeight = 260 });
-        _orderItemsGrid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Size", HeaderText = "Размер", FillWeight = 60 });
-        _orderItemsGrid.Columns.Add(new DataGridViewTextBoxColumn
-        {
-            Name = "Quantity",
-            HeaderText = "Кол-во",
-            FillWeight = 60,
-            DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter }
-        });
-        _orderItemsGrid.Columns.Add(new DataGridViewTextBoxColumn
-        {
-            Name = "Price",
-            HeaderText = "Цена",
-            FillWeight = 90,
-            DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight }
-        });
-        _orderItemsGrid.Columns.Add(new DataGridViewTextBoxColumn
-        {
-            Name = "Sum",
-            HeaderText = "Сумма",
-            FillWeight = 100,
-            DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight }
-        });
         UiTheme.StyleGrid(_orderItemsGrid);
-
-        detailsPanel.Controls.Add(_orderItemsGrid);
-        detailsPanel.Controls.Add(orderHeaderPanel);
-
-        _ordersSplit.Panel1.Controls.Add(_ordersGrid);
-        _ordersSplit.Panel2.Controls.Add(detailsPanel);
-
-        page.Controls.Add(_ordersSplit);
-        page.Controls.Add(topPanel);
-        page.Enter += (_, _) => LoadOrders();
-
-        return page;
     }
 
-    private static Label CreateFilterLabel(string text) => new()
+    private void SearchTextBox_TextChanged(object? sender, EventArgs e)
     {
-        Text = text,
-        AutoSize = true,
-        Margin = new Padding(4, 14, 4, 0),
-        Font = UiTheme.BaseFont
-    };
+        LoadCatalog();
+    }
+
+    private void FilterComboBox_SelectedIndexChanged(object? sender, EventArgs e)
+    {
+        LoadCatalog();
+    }
+
+    private void ResetFiltersButton_Click(object? sender, EventArgs e)
+    {
+        ResetFilters();
+    }
+
+    private void LogoutButton_Click(object? sender, EventArgs e)
+    {
+        Close();
+    }
+
+    private void RefreshOrdersButton_Click(object? sender, EventArgs e)
+    {
+        LoadOrders();
+    }
+
+    private void CartTab_Enter(object? sender, EventArgs e)
+    {
+        RefreshCart();
+    }
+
+    private void OrdersTab_Enter(object? sender, EventArgs e)
+    {
+        LoadOrders();
+    }
 
     private void LoadFilterData()
     {
